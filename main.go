@@ -503,7 +503,7 @@ func (b *Benchstat) Format(scaler func(float64) string) string {
 func (stat *Benchstat) ComputeStats() {
 	// Discard outliers.
 	values := stats.Sample{Xs: stat.Values}
-	q1, q3 := values.Percentile(0.25), values.Percentile(0.75)
+	q1, q3 := values.Quantile(0.25), values.Quantile(0.75)
 	lo, hi := q1-1.5*(q3-q1), q3+1.5*(q3-q1)
 	for _, value := range stat.Values {
 		if lo <= value && value <= hi {
