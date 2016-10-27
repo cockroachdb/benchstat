@@ -218,9 +218,11 @@ func main() {
 				scaler := newScaler(old.Mean, old.Unit)
 				row := newRow(key.Benchmark, old.Format(scaler), new.Format(scaler), "~   ")
 				if testerr == stats.ErrZeroVariance {
-					row.add("zero variance")
+					row.add("(zero variance)")
 				} else if testerr == stats.ErrSampleSize {
-					row.add("too few samples")
+					row.add("(too few samples)")
+				} else if testerr == stats.ErrSamplesEqual {
+					row.add("(all equal)")
 				} else if testerr != nil {
 					row.add(fmt.Sprintf("(%s)", testerr))
 				} else if pval < *flagAlpha {
@@ -342,6 +344,11 @@ func main() {
 				case 0:
 					fmt.Fprintf(&buf, "%-*s", max[i], s)
 				default:
+					if i == len(row.cols)-1 && len(s) > 0 && s[0] == '(' {
+						// Left-align p value.
+						fmt.Fprintf(&buf, "  %s", s)
+						break
+					}
 					fmt.Fprintf(&buf, "  %*s", max[i], s)
 				}
 			}
@@ -482,7 +489,13 @@ func (b *Benchstat) Format(scaler func(float64) string) string {
 	if d := b.Max/b.Mean - 1; d > diff {
 		diff = d
 	}
-	return fmt.Sprintf("%s ±%3s", scaler(b.Mean), fmt.Sprintf("%.0f%%", diff*100.0))
+	s := scaler(b.Mean)
+	if b.Mean == 0 {
+		s += "     "
+	} else {
+		s = fmt.Sprintf("%s ±%3s", s, fmt.Sprintf("%.0f%%", diff*100.0))
+	}
+	return s
 }
 
 // ComputeStats updates the derived statistics in s from the raw
